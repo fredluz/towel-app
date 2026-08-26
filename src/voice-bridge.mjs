@@ -151,7 +151,7 @@ export class VoiceBridge {
       if (event.type === "ready") {
         clearTimeout(timeout);
         this.mode = event.mode || "wake";
-        readyResolve(undefined);
+        readyResolve();
       } else if (event.type === "mode") {
         this.mode = event.mode || this.mode;
       }
