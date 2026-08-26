@@ -11,7 +11,7 @@ struct VoiceEvent: Codable, Sendable {
     var message: String?
 }
 
-struct ControlCommand: Decodable {
+struct ControlCommand: Decodable, Sendable {
     var command: String
     var mode: String?
     var context: String?
