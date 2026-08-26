@@ -30,11 +30,19 @@ test("rejects milestones outside the exact timer", () => {
 });
 
 test("timer speaks supplied completion text and emits completion", async () => {
+  /** @type {string[]} */
   const spoken = [];
+  /** @type {{id: string, label: string, durationSeconds: number}[]} */
   const completed = [];
   const timer = new TimerService({
-    speaker: { say: async (text) => spoken.push(text) },
-    onComplete: async (event) => completed.push(event),
+    speaker: {
+      say: async (text) => {
+        spoken.push(text);
+      },
+    },
+    onComplete: async (event) => {
+      completed.push(event);
+    },
   });
 
   const id = timer.start({

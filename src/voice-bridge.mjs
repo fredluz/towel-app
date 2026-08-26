@@ -14,6 +14,10 @@ import { join, resolve } from "node:path";
  * }} VoiceEvent
  */
 
+/**
+ * @param {string} path
+ * @returns {Promise<boolean>}
+ */
 async function exists(path) {
   try {
     await access(path, constants.X_OK);
@@ -23,6 +27,11 @@ async function exists(path) {
   }
 }
 
+/**
+ * @param {import("node:child_process").ChildProcess} child
+ * @param {string} label
+ * @returns {Promise<void>}
+ */
 function waitForExit(child, label) {
   return new Promise((resolvePromise, reject) => {
     child.once("error", reject);
@@ -117,8 +126,11 @@ export class VoiceBridge {
     });
 
     const lines = createInterface({ input: child.stdout });
-    let readyResolve;
-    let readyReject;
+    /** @type {() => void} */
+    let readyResolve = () => {};
+    /** @type {(reason?: unknown) => void} */
+    let readyReject = () => {};
+    /** @type {Promise<void>} */
     const ready = new Promise((resolvePromise, reject) => {
       readyResolve = resolvePromise;
       readyReject = reject;

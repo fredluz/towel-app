@@ -124,7 +124,7 @@ export class TimerService {
   }
 
   /**
-   * @param {string | undefined} id
+   * @param {string} [id]
    * @returns {string[]}
    */
   cancel(id) {
