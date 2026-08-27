@@ -1,26 +1,34 @@
 # Third-party notices
 
-Towel currently depends on these open-source projects. It does not copy workout-domain
-code from Rally, FitVoice, GymWhisper, or other workout trackers.
+## oh-my-pi / OMP
 
-## Pi
+Towel depends on `@oh-my-pi/pi-coding-agent` and `@oh-my-pi/pi-natives` 18.0.7 and
+imports OMP's Codex Live transport, protocol helpers, and native microphone/WebRTC
+bindings. Towel's microphone echo gate follows the small thresholding pattern used by
+OMP's live controller.
 
-- Project: `earendil-works/pi`
-- Package: `@earendil-works/pi-coding-agent`
-- License: MIT
-- Purpose: agent harness, extension API, and file-editing tools
+Source: https://github.com/can1357/oh-my-pi
 
-## Swabble
+MIT License
 
-- Project: `openclaw/Swabble`
-- License: MIT
-- Copyright: Copyright (c) 2025 Peter Steinberger
-- Purpose: macOS microphone capture and Apple Speech framework transcription
+Copyright (c) 2025 Mario Zechner
+Copyright (c) 2025-2026 Can Bölük
+Copyright (c) 2026 Stencil Labs, Inc.
 
-Swabble is consumed as a pinned Swift Package dependency. Its license is available
-in the upstream repository.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-## Platform frameworks
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-The voice helper uses Apple AVFoundation and Speech frameworks. These are platform
-frameworks, not bundled open-source dependencies.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

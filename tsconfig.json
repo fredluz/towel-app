@@ -1,19 +1,18 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "allowJs": true,
-    "checkJs": true,
-    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "strict": true,
+    "noEmit": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "allowImportingTsExtensions": true,
+    "types": ["bun"]
   },
   "include": [
-    ".pi/extensions/**/*.ts",
-    "src/**/*.mjs",
-    "bin/**/*.mjs",
-    "tests/**/*.mjs"
+    "extension/**/*.ts",
+    "bin/**/*.ts",
+    "src/**/*.ts",
+    "tests/**/*.ts"
   ]
 }

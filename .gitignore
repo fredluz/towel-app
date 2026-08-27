@@ -1,6 +1,5 @@
 node_modules/
 .DS_Store
-voice/.build/
 *.log
 .env
 .env.*

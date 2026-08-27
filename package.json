@@ -1,37 +1,28 @@
 {
   "name": "towel-app",
-  "version": "0.1.0",
-  "description": "Voice-first workout runtime for Pi on macOS",
-  "private": true,
+  "version": "0.2.0",
+  "description": "Continuous Codex Live workout companion for OMP",
   "type": "module",
+  "private": false,
+  "license": "MIT",
   "bin": {
-    "towel": "./bin/towel.mjs"
-  },
-  "pi": {
-    "extensions": [
-      "./.pi/extensions/towel/index.ts"
-    ]
+    "towel": "./bin/towel.ts"
   },
   "scripts": {
-    "build:voice": "swift build --package-path voice -c release",
-    "test": "node --test tests/*.test.mjs",
-    "test:voice": "swift test --package-path voice",
+    "towel": "bun ./bin/towel.ts",
+    "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "towel": "node ./bin/towel.mjs"
-  },
-  "engines": {
-    "node": ">=22.19.0"
+    "smoke:imports": "bun -e 'await import(\"@oh-my-pi/pi-coding-agent/live/transport\"); await import(\"@oh-my-pi/pi-coding-agent/live/protocol\"); await import(\"@oh-my-pi/pi-natives\"); console.log(\"Codex Live imports OK\")'"
   },
   "dependencies": {
-    "typebox": "1.3.7"
+    "@oh-my-pi/pi-coding-agent": "18.0.7",
+    "@oh-my-pi/pi-natives": "18.0.7"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "0.84.3",
-    "@types/node": "22.19.19",
-    "typescript": "5.9.3"
+    "@types/bun": "^1.3.0",
+    "typescript": "^5.9.3"
   },
-  "peerDependencies": {
-    "@earendil-works/pi-coding-agent": ">=0.84.3"
-  },
-  "license": "MIT"
+  "engines": {
+    "bun": ">=1.3.14"
+  }
 }

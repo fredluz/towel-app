@@ -1,177 +1,181 @@
 # Towel
 
-Towel is a voice-first workout runtime for [Pi](https://pi.dev) on macOS.
+Towel is a continuous, voice-first workout companion for macOS headphones. It uses
+**OMP Codex Live** for the actual full-duplex conversation and an OMP backend agent for
+workout reasoning and Markdown edits.
 
-It keeps the architecture intentionally thin:
+There is no FaceTime bridge, virtual audio device, wake word, workout database, or
+separate TTS engine.
 
-- **Pi is the brain.** It reads and edits a workout Markdown file, reasons about
-  deviations, and decides what comes next.
-- **Markdown is the state.** The plan becomes the log as Pi annotates it. There is no
-  workout database or mandatory schema.
-- **Towel is the ears and mouth.** A small macOS helper provides wake-gated speech,
-  contextual replies, live rep ordinals, exact timers, and `say` output.
+## Architecture
 
-The wake word is **“Towel.”**
+```text
+headphone microphone
+        │
+        ▼
+OMP Codex Live (`gpt-live-1-codex` over WebRTC)
+        │
+        ├── natural continuous conversation and barge-in
+        ├── realtime user/assistant transcripts
+        └── delegation requests
+                    │
+                    ▼
+            Towel OMP extension
+                    │
+                    ├── deterministic latest-ordinal rep mode
+                    ├── exact plan-directed timers
+                    └── backend agent turns
+                                │
+                                ▼
+                         workout Markdown
+```
 
-## Current MVP
+The active Markdown file is both the plan and the log. The backend agent edits that
+same file as the workout changes. Towel does not impose a workout schema.
 
-After one manual launch, the intended loop is hands-free:
+## MVP behavior
 
-1. Pi reads the selected workout Markdown and speaks the first instruction.
-2. Say “Towel, …” for arbitrary commands or corrections.
-3. When Pi enables live rep mode, count aloud and say **“done.”** The latest spoken
-   ordinal is sent to Pi.
-4. You can alternatively say “Towel, eight reps” after a set.
-5. Pi edits the same Markdown, then announces the next document-directed action.
-6. Timers speak only the milestones written in the plan or explicitly requested.
+After one manual launch, the session is hands-free:
 
-Example correction:
-
-> Towel, I did six, failed halfway through seven.
-
-Pi records that meaning as Markdown rather than forcing it into a database field.
+1. Towel opens a direct Codex Live call through the Mac's default microphone and output.
+2. The backend reads the selected workout Markdown and sends the first spoken instruction.
+3. You talk normally; there is no “Towel” wake word in this version.
+4. Workout-state requests are delegated to the backend agent, which reads or edits the
+   Markdown and returns a concise answer to the live conversation.
+5. For live rep counting, the backend enables deterministic rep mode. Say numbers and
+   finish with **“done.”** Towel records the latest spoken number, not a count of
+   recognition events.
+6. You can instead report a set conversationally: “I did six and failed halfway through
+   seven.” The backend preserves that nuance in Markdown.
+7. Timers use exactly the duration and spoken milestones in the plan or your request.
 
 ## Requirements
 
 - Apple-silicon Mac; the initial target is an M4 MacBook Air.
-- **macOS 26 or later** and Swift 6.2/Xcode command-line tools.
-- Node.js 22.19 or later.
-- Pi installed and authenticated:
-  ```bash
-  npm install -g --ignore-scripts @earendil-works/pi-coding-agent
-  pi
-  /login
-  ```
-- Headphones selected as the default macOS audio input and output.
-- Internet access for Pi/model calls. Towel is not designed as an offline agent.
+- Headphones selected as the default macOS input and output.
+- [Bun](https://bun.sh) 1.3.14 or newer.
+- Internet access.
+- A working OMP OpenAI Codex login with Live access. Towel uses the same ChatGPT/Codex
+  OAuth credential as OMP's `/live` mode; it does not require an OpenAI Platform API key.
+- A configured OMP backend model. This can be your normal GPT-5.6 provider/model.
 
-The macOS 26 requirement comes from the current Swabble speech pipeline, which uses
-Apple's `SpeechAnalyzer` and `SpeechTranscriber`.
-
-## Install
+## Install and authenticate
 
 ```bash
 git clone https://github.com/fredluz/towel-app.git
 cd towel-app
-npm install
-npm run build:voice
+bun install
 ```
 
-On the first Pi launch, trust the project so Pi can load `.pi/extensions/towel/index.ts`.
+Authenticate the locally pinned OMP installation once:
+
+```bash
+./node_modules/.bin/omp
+/login
+```
+
+Choose the OpenAI Codex/ChatGPT subscription login for Codex Live. Configure or select
+whatever backend model you want OMP to use for plan reasoning and file edits, then quit.
 
 ## Run
 
 ```bash
-npm run towel -- workouts/example.md
+bun run towel -- workouts/example.md
 ```
 
-Or link the launcher:
+Pass normal OMP arguments after `--`:
 
 ```bash
-npm link
-towel workouts/example.md
+bun run towel -- workouts/today.md -- --model openai/gpt-5.6
 ```
 
-The launcher:
+The exact model selector depends on your OMP configuration. The live voice transport
+still uses `gpt-live-1-codex`; the `--model` argument selects the backend agent model.
 
-- validates the Markdown path;
-- starts Pi from the repository root;
-- enables the Towel extension;
-- starts the Swift voice helper;
-- injects the initial request for Pi to read the document and begin.
-
-Pass Pi arguments after `--`:
+Link the launcher globally if useful:
 
 ```bash
-towel workouts/today.md -- --model openai/gpt-5.6
+bun link
+towel workouts/today.md
 ```
 
-The model identifier above is only illustrative; use the provider/model name available
-in your Pi installation.
+On first use, macOS may ask for microphone permission. Towel uses the currently selected
+default audio devices.
 
-## Voice behavior
+## Conversation examples
 
-### Wake mode
+```text
+Towel: Shoulder circles for twenty seconds. Tell me when you're ready.
+You: Ready.
+Towel: Starting now.
+```
 
-Say the wake word and command together:
+```text
+You: Start the bench set.
+Towel: Go ahead.
+You: One, two, three, four, five, six, seven, done.
+Towel: Seven at eighty kilos recorded. What's next follows the Markdown.
+```
 
-> Towel, do rows next.
+```text
+You: No, correct that. I completed six and failed halfway through seven.
+Towel: Corrected.
+```
 
-Or say only “Towel”; it answers “Yes?” and captures the following utterance.
+The exact wording is model-generated; the rep ordinal and timer timing are deterministic.
 
-### Rep mode
+## Towel tools available to the backend
 
-Pi calls `towel_begin_reps`. Towel listens to partial speech results for ordinals:
+- `towel_begin_reps`
+- `towel_start_timer`
+- `towel_cancel_timer`
+- `towel_voice_status`
 
-> One, two, three, four, five, six, seven, done.
-
-`done` exits rep mode. The latest recognized ordinal—in this example, seven—is sent to
-Pi. It is not treated as seven increment events.
-
-### Expected reply mode
-
-When Pi asks for “ready” or another immediate answer, it calls
-`towel_expect_reply`. The next utterance is accepted without the wake word, then Towel
-returns to wake mode.
-
-### Timers
-
-Pi calls `towel_start_timer` with an exact duration and zero or more exact spoken
-milestones. Towel adds no default halfway/ten-second announcements.
-
-## Pi commands
-
-Inside Pi:
+OMP commands:
 
 - `/towel-start [workout.md]`
 - `/towel-stop`
 - `/towel-status`
 
-## Extension tools
+## Voice selection
 
-The model can call:
+Set `TOWEL_VOICE` before launch. OMP's current Codex Live voices include `arbor`,
+`breeze`, `cove`, `ember`, `juniper`, `maple`, `sol`, `spruce`, and `vale`.
 
-- `towel_begin_reps`
-- `towel_expect_reply`
-- `towel_start_timer`
-- `towel_cancel_timer`
-- `towel_voice_status`
+```bash
+TOWEL_VOICE=maple bun run towel -- workouts/example.md
+```
 
-The built-in Pi `read`, `edit`, and `write` tools update the workout Markdown directly.
+The default is `sol`.
 
 ## Development
 
 ```bash
-npm test
-npm run typecheck
-swift test --package-path voice
+bun test
+bun run typecheck
+bun run smoke:imports
 ```
 
-The Node tests cover Markdown-to-speech cleanup and deterministic timer behavior.
-The Swift tests cover rep-number parsing. The full microphone path must be smoke-tested
-on macOS hardware because the development container is not macOS.
+CI runs these checks on a macOS 26 runner. Pure tests cover transcript coalescing,
+latest-number parsing, rep-mode state, and exact timer behavior. The import smoke test
+loads OMP's Codex Live transport, protocol, and native audio module.
 
-## Known MVP limits
+## Current limits
 
-- Wake detection is transcript gating, not a dedicated neural keyword spotter.
-- Live number accuracy depends on Apple's speech transcription and the headphone mic.
-- Towel suppresses microphone handling while macOS `say` is speaking; **barge-in is not
-  implemented yet**.
-- The default macOS audio input must already be the intended headphone microphone.
-- There is no GUI, phone client, posture analysis, or automatic training programming.
-- This is online because Pi/model reasoning is online.
-- First-run microphone and speech permissions still require macOS approval.
+- The integration intentionally pins OMP `18.0.7` because it imports OMP's live transport
+  and protocol modules directly. Upgrade those dependencies together and run the import
+  smoke test.
+- A real headphone/microphone session still needs a physical smoke test on the target Mac;
+  CI cannot exercise microphone permissions or a subscription-authenticated Live call.
+- Rep accuracy depends on the realtime input transcript, but missed intermediate numbers
+  do not matter when the final ordinal is recognized.
+- Towel currently uses the system's default input/output devices rather than selecting a
+  device by name.
+- No posture analysis, camera input, GUI, phone client, or autonomous programming is in
+  this MVP.
 
-## Reuse decision
+## Reuse
 
-This version does **not** lift workout models or parsing code from Rally, FitVoice,
-GymWhisper, or other trackers. That would reintroduce the schema Towel is intentionally
-avoiding.
-
-It uses:
-
-- Pi's public extension API for orchestration;
-- Swabble as a pinned MIT-licensed Swift Package for the macOS speech pipeline;
-- macOS `say` for understandable TTS.
-
-See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Towel imports OMP's MIT-licensed Codex Live WebRTC transport/protocol and native audio
+bindings. It does not reuse the earlier Swabble/Apple Speech implementation or workout
+schemas from other trackers. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
