@@ -20,6 +20,15 @@ type ResponseRoute =
   | { kind: "delegation"; id: string }
   | { kind: "session"; source: "boot" | "reps" | "timer" | "command" };
 
+type BeginRepsParams = { context: string };
+type StartTimerParams = {
+  label: string;
+  durationSeconds: number;
+  announcements?: Array<{ remainingSeconds: number; text: string }>;
+  completionMessage?: string;
+};
+type CancelTimerParams = { id?: string };
+
 function resolveWorkoutFile(path: string, cwd: string): string {
   return resolve(isAbsolute(path) ? path : resolve(cwd, path));
 }
@@ -270,10 +279,11 @@ export default function towelExtension(pi: ExtensionAPI) {
       context: z.string().describe("Concise set context, for example bench press set 2 at 80 kg"),
     }),
     async execute(_toolCallId, params) {
-      requireRuntime().beginReps(params.context);
+      const input = params as BeginRepsParams;
+      requireRuntime().beginReps(input.context);
       return {
-        content: [{ type: "text", text: `Rep mode is active for ${params.context}.` }],
-        details: { context: params.context, mode: "reps" },
+        content: [{ type: "text", text: `Rep mode is active for ${input.context}.` }],
+        details: { context: input.context, mode: "reps" },
       };
     },
   });
@@ -298,10 +308,11 @@ export default function towelExtension(pi: ExtensionAPI) {
     }),
     async execute(_toolCallId, params) {
       if (!active) throw new Error("Towel is not active");
-      const id = timers.start(params);
+      const input = params as StartTimerParams;
+      const id = timers.start(input);
       return {
-        content: [{ type: "text", text: `Timer ${id} started for ${params.durationSeconds} seconds.` }],
-        details: { id, ...params },
+        content: [{ type: "text", text: `Timer ${id} started for ${input.durationSeconds} seconds.` }],
+        details: { id, ...input },
       };
     },
   });
@@ -314,10 +325,11 @@ export default function towelExtension(pi: ExtensionAPI) {
       id: z.string().optional(),
     }),
     async execute(_toolCallId, params) {
-      const cancelled = timers.cancel(params.id);
+      const input = params as CancelTimerParams;
+      const cancelled = timers.cancel(input.id);
       return {
         content: [{ type: "text", text: `Cancelled ${cancelled} timer${cancelled === 1 ? "" : "s"}.` }],
-        details: { cancelled, id: params.id },
+        details: { cancelled, id: input.id },
       };
     },
   });
